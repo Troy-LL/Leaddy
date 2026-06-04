@@ -1,0 +1,76 @@
+services:
+  scrapling_mcp:
+    image: pyd4vinci/scrapling:latest
+    command: scrapling mcp --http --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5)\" || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:////app/data/leads.db
+      SCRAPLING_MCP_URL: http://scrapling_mcp:8001
+      LI_AT: ${LI_AT:-}
+      GOOGLE_SERP_KEY: ${GOOGLE_SERP_KEY:-}
+    volumes:
+      - leads_data:/app/data
+    depends_on:
+      scrapling_mcp:
+        condition: service_started
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    depends_on:
+      - backend
+
+  agent_simple:
+    build:
+      context: ./agent
+      dockerfile: simple.Dockerfile
+    profiles: [simple-agent]
+    environment:
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      BACKEND_URL: http://backend:8000
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+
+  agent_openclaw:
+    build:
+      context: ./agent
+      dockerfile: openclaw.Dockerfile
+    profiles: [openclaw]
+    depends_on:
+      - backend
+
+  agent_hermes:
+    build:
+      context: ./agent
+      dockerfile: hermes.Dockerfile
+    profiles: [hermes]
+    depends_on:
+      - backend
+
+volumes:
+  leads_data:
+  frontend_node_modules:

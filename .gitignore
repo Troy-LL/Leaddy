@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+dist/
+leads.db
+backend/leads.db
+backend/data/
+*.log
+.DS_Store
