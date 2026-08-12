@@ -1,6 +1,6 @@
-# LeadGen Harness
+# Leaddy
 
-Find business leads from a plain-English search — and watch them appear in a live dashboard as they’re discovered.
+Type who you're looking for in plain English. Leads show up in a live dashboard.
 
 You might type something like *“CTOs at Series A fintech startups in Southeast Asia”*. The system searches the web, visits company sites, optionally enriches from LinkedIn, saves everything to a local database, and streams new rows to your browser in real time.
 
